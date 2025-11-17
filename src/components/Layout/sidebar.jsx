@@ -8,40 +8,32 @@ import { useSidebar } from '../../hooks/useSidebar';
 import Link from 'next/link';
 import Image from 'next/image';
 import logo from '../../assets/images/logo.png';
-// import { useAuth } from '../../Context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 // Define navigation items based on roles
-// const getNavItemsByRole = (role) => {
-//   switch (role) {
-//     case 'admin':
-//       return [
-//         { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-//         { title: 'Sellers', href: '/dashboard/sellers', icon: 'users', label: 'users' },
-//         { title: 'Orders', href: '/dashboard/allOrders', icon: 'products', label: 'products' },
-//         { title: 'Tickets', href: '/dashboard/tickets', icon: 'Tickets', label: 'Tickets' },
-//         // { title: 'Vouchers', href: '/dashboard/vouchers', icon: 'TicketCheck', label: 'TicketCheck' },
-//       ];
-//     case 'seller':
-//       return [
-//         { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-//         { title: 'Products', href: '/dashboard/products', icon: 'products', label: 'products'  },
-//         { title: 'Orders', href: '/dashboard/orders', icon: 'zap', label: 'Zap'  },
-//         { title: 'Payments', href: '/dashboard/payments', icon: 'briefcase', label: 'briefcase'  },
-//       ];
-//     case 'super_admin':
-//       return [
-//         { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-//         { title: 'Manage Sellers', href: '/dashboard/sellers', icon: 'users', label: 'users' },
-//         { title: 'Manage Admins', href: '/dashboard/admins', icon: 'users', label: 'users' },
+const getNavItemsByRole = (role) => {
+  switch (role) {
+    case 'DOCTOR':
+      return [
+        { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
+        { title: 'Patients', href: '/dashboard/patients', icon: 'users', label: 'users' },
+        { title: 'Appointments', href: '/dashboard/appointments', icon: 'Calendar', label: 'Calendar' },
+       { title: 'Delivery Records', href: '/dashboard/delivery-records', icon: 'Tickets', label: 'Tickets' },
+      ];
+    case 'PATIENT':
+      return [
+        { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
+        { title: 'My Appointments', href: '/dashboard/my-appointments', icon: 'Calendar', label: 'Calendar' },
+        { title: 'My Delivery Records', href: '/dashboard/my-delivery', icon: 'Tickets', label: 'Tickets' },
+      ];
 
-//       ];
-//     default:
-//       return [
-//         { name: 'OverView', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-//         { name: 'Products', href: '/products' }
-//       ];
-//   }
-// };
+    default:
+      return [
+        { name: 'OverView', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
+        { title: 'Delivery Records', href: '/dashboard/delivery-records', icon: 'Tickets', label: 'Tickets' },
+      ];
+  }
+};
 
 const navItems = [
     { title: 'Overview', href: '/Dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -53,16 +45,16 @@ const navItems = [
 ]
 
 const Sidebar = ({ className }) => {
-//   const { user } = useAuth(); 
-//   const [navItems, setNavItems] = useState([]);
+  const { user } = useAuth(); 
+  const [navItems, setNavItems] = useState([]);
   const { isMinimized, toggle } = useSidebar();
 
-//   useEffect(() => {
-//     if (user?.role) {
-//       const items = getNavItemsByRole(user.role);
-//       setNavItems(items);
-//     }
-//   }, [user]);
+  useEffect(() => {
+    if (user?.role) {
+      const items = getNavItemsByRole(user.role);
+      setNavItems(items);
+    }
+  }, [user]);
 
   const handleToggle = () => {
     toggle();

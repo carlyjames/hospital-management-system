@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { useContext, useState, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
 import avatar from '../../assets/images/avater.png';
+import { useAuth } from '@/hooks/useAuth';
 
 import {
   DropdownMenu,
@@ -22,22 +23,22 @@ import { Badge } from '../ui/badge';
 import Image from 'next/image';
 
 export function UserNav() {
-//   const { Logout } = useAuth();
-//   const [userData, setUserData] = useState({});
+  const { logout } = useAuth();
+  const [userData, setUserData] = useState({});
 
-//   useEffect(() => {
-//     const actorDetails = localStorage.getItem('actorDetails');
-//     if (actorDetails) {
-//       try {
-//         const parsedData = JSON.parse(actorDetails);
-//         setUserData(parsedData || {});
-//       } catch (error) {
-//         setUserData({});
-//       }
-//     } else {
-//       setUserData({});
-//     }
-//   }, []);
+  useEffect(() => {
+    const actorDetails = localStorage.getItem('user');
+    if (actorDetails) {
+      try {
+        const parsedData = JSON.parse(actorDetails);
+        setUserData(parsedData || {});
+      } catch (error) {
+        setUserData({});
+      }
+    } else {
+      setUserData({});
+    }
+  }, []);
 
 //   const getDisplayName = () => {
 //     if (userData?.name) {
@@ -68,7 +69,7 @@ export function UserNav() {
           <div className='flex flex-col items-start'>
             <div className='w-full flex items-center justify-between'>
               <div className='flex items-center gap-2'>
-                <h1 className='font-semibold truncate'>James Abraham</h1>
+                <h1 className='font-semibold truncate'>{userData.full_name}</h1>
               </div>
               {/* {userData?.role === 'seller' ? (
                 <Link href='/dashboard/profile'>

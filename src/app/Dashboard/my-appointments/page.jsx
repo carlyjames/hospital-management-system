@@ -3,40 +3,38 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, Clock, Eye, Search, CalendarDays, User, FileText, MapPin } from 'lucide-react'
-import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Calendar, Clock, Eye, Search, CalendarDays, User, FileText } from 'lucide-react'
 import dayjs from 'dayjs'
-import AppointmentsData from '../../appointments.json'
-
-// For demo purposes - in real app, get this from auth context/session
-const CURRENT_PATIENT_ID = 'P004' // John Doe
+import { usePatient } from '@/hooks/usePatient'
 
 const Page = () => {
     const [searchQuery, setSearchQuery] = useState('')
+    
+    // Fetch appointments from API
+    const { patientAppointments, patientAppointmentsLoading, patientAppointmentsError } = usePatient()
 
-    // Filter appointments for current patient
-    const patientAppointments = AppointmentsData.filter(apt => apt.patient_id === CURRENT_PATIENT_ID)
-
-    // Further filter by search query
-    const filteredAppointments = patientAppointments.filter(apt => {
-        const searchLower = searchQuery.toLowerCase()
-        return apt.appointment_id.toLowerCase().includes(searchLower) ||
-            apt.type.toLowerCase().includes(searchLower) ||
-            apt.doctor.toLowerCase().includes(searchLower) ||
-            apt.reason.toLowerCase().includes(searchLower)
-    })
+    // Filter appointments based on search query
+    // const filteredAppointments = patientAppointments.filter(apt => {
+    //     const searchLower = searchQuery.toLowerCase()
+    //     const doctorName = typeof apt.doctor === 'object' ? apt.doctor?.full_name : apt.doctor
+    //     return apt.appointment_id?.toLowerCase().includes(searchLower) ||
+    //         apt.type?.toLowerCase().includes(searchLower) ||
+    //         doctorName?.toLowerCase().includes(searchLower) ||
+    //         apt.reason?.toLowerCase().includes(searchLower)
+    // })
 
     // Get status badge color
     const getStatusColor = (status) => {
-        switch (status.toLowerCase()) {
-            case 'scheduled':
+        switch (status?.toUpperCase()) {
+            case 'SCHEDULED':
+            case 'ACCEPTED':
                 return 'bg-blue-100 text-blue-700 hover:bg-blue-100'
-            case 'completed':
+            case 'COMPLETED':
                 return 'bg-green-100 text-green-700 hover:bg-green-100'
-            case 'cancelled':
+            case 'DECLINED ':
                 return 'bg-red-100 text-red-700 hover:bg-red-100'
             default:
                 return 'bg-gray-100 text-gray-700 hover:bg-gray-100'
@@ -44,35 +42,58 @@ const Page = () => {
     }
 
     // Get appointment type icon
-    const getTypeIcon = (type) => {
-        switch (type.toLowerCase()) {
-            case 'general checkup':
-                return '🩺'
-            case 'follow-up':
-                return '🔄'
-            case 'consultation':
-                return '💬'
-            case 'prenatal':
-                return '🤰'
-            default:
-                return '📋'
-        }
+
+
+    // Helper function to get doctor name
+    const getDoctorName = (doctor) => {
+        return typeof doctor === 'object' ? doctor?.full_name : doctor
     }
 
     // Count appointments by status
     const appointmentStats = {
         total: patientAppointments.length,
-        upcoming: patientAppointments.filter(a => a.status === 'Scheduled').length,
-        completed: patientAppointments.filter(a => a.status === 'Completed').length,
-        cancelled: patientAppointments.filter(a => a.status === 'Cancelled').length
+        upcoming: patientAppointments.filter(a => a.status === 'ACCEPTED' || a.status === 'ACCEPTED' || a.status === 'PENDING').length,
+        completed: patientAppointments.filter(a => a.status === 'Completed' || a.status === 'COMPLETED').length,
+        DECLINED : patientAppointments.filter(a => a.status === 'DECLINED ' || a.status === 'DECLINED ').length
     }
 
-    // Get patient details from first appointment
-    const patientInfo = patientAppointments.length > 0 ? {
-        name: patientAppointments[0].patient_name,
-        age: patientAppointments[0].patient_age,
-        gender: patientAppointments[0].patient_gender
-    } : null
+    // Loading state
+    if (patientAppointmentsLoading) {
+        return (
+            <div className='mx-4 py-6'>
+                <div className='flex items-center justify-center min-h-screen'>
+                    <div className='text-center'>
+                        <div className='w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+                        <p className='text-gray-600'>Loading appointments...</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // Error state
+    if (patientAppointmentsError) {
+        return (
+            <div className='mx-4 py-6'>
+                <div className='flex items-center justify-center min-h-screen'>
+                    <Card className='max-w-md'>
+                        <CardContent className='p-6 text-center'>
+                            <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                                <span className='text-3xl'>⚠️</span>
+                            </div>
+                            <h3 className='text-lg font-semibold text-gray-900 mb-2'>Error Loading Appointments</h3>
+                            <p className='text-sm text-gray-600 mb-4'>
+                                {patientAppointmentsError.message || 'Unable to fetch appointments. Please try again later.'}
+                            </p>
+                            <Button onClick={() => window.location.reload()}>
+                                Retry
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className='mx-4 py-6'>
@@ -81,8 +102,6 @@ const Page = () => {
                 <h1 className='text-3xl font-bold text-gray-900'>My Appointments</h1>
                 <p className='text-sm text-gray-500 mt-1'>View your scheduled and past appointments</p>
             </div>
-
-
 
             {/* Stats Cards */}
             <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
@@ -129,8 +148,8 @@ const Page = () => {
                     <CardContent className='p-6'>
                         <div className='flex items-center justify-between'>
                             <div>
-                                <p className='text-sm font-medium text-gray-600'>Cancelled</p>
-                                <p className='text-3xl font-bold text-red-600'>{appointmentStats.cancelled}</p>
+                                <p className='text-sm font-medium text-gray-600'>DECLINED </p>
+                                <p className='text-3xl font-bold text-red-600'>{appointmentStats.DECLINED }</p>
                             </div>
                             <div className='w-12 h-12 bg-red-50 rounded-full flex items-center justify-center'>
                                 <User className='w-6 h-6 text-red-600' />
@@ -153,16 +172,16 @@ const Page = () => {
 
             {/* Appointments List */}
             <div className='space-y-4'>
-                {filteredAppointments.length > 0 ? (
-                    filteredAppointments.map((appointment) => (
+                {patientAppointments.length > 0 ? (
+                    patientAppointments.map((appointment) => (
                         <Card key={appointment.appointment_id} className='hover:shadow-md transition-shadow'>
                             <CardContent className='p-6'>
                                 <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
                                     <div className='flex-1'>
                                         <div className='flex items-start gap-3 mb-3'>
-                                            <div className='w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0'>
+                                            {/* <div className='w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0'>
                                                 <span className='text-2xl'>{getTypeIcon(appointment.type)}</span>
-                                            </div>
+                                            </div> */}
                                             <div className='flex-1'>
                                                 <div className='flex items-center gap-2 mb-1'>
                                                     <h3 className='font-semibold text-lg'>{appointment.type}</h3>
@@ -182,7 +201,7 @@ const Page = () => {
                                                     </div>
                                                     <div className='flex items-center gap-1'>
                                                         <User className='w-4 h-4' />
-                                                        <span>{appointment.doctor}</span>
+                                                        <span>Dr. {getDoctorName(appointment.doctor)}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -198,12 +217,10 @@ const Page = () => {
                                     </div>
                                     <Dialog>
                                         <DialogTrigger asChild>
-                                            <div className='flex md:flex-col gap-2'>
-                                                <Button className='w-full bg-[#021848] hover:bg-[#021848]/90'>
-                                                    <Eye className='w-4 h-4 mr-2' />
-                                                    View Details
-                                                </Button>
-                                            </div>
+                                            <Button className='bg-[#021848] hover:bg-[#021848]/90'>
+                                                <Eye className='w-4 h-4 mr-2' />
+                                                View Details
+                                            </Button>
                                         </DialogTrigger>
 
                                         <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
@@ -211,17 +228,12 @@ const Page = () => {
                                                 <DialogTitle className='text-2xl'>Appointment Details</DialogTitle>
                                             </DialogHeader>
 
-                                            {/* Remove DialogDescription to avoid nesting issues */}
                                             <div className='mt-4'>
                                                 <Tabs defaultValue='overview' className='w-full'>
                                                     <TabsList className='grid w-full grid-cols-3'>
                                                         <TabsTrigger value='overview'>Overview</TabsTrigger>
-                                                        <TabsTrigger value='prescriptions'>
-                                                            Prescriptions
-                                                        </TabsTrigger>
-                                                        <TabsTrigger value='tests'>
-                                                            Test Results
-                                                        </TabsTrigger>
+                                                        <TabsTrigger value='prescriptions'>Prescriptions</TabsTrigger>
+                                                        <TabsTrigger value='tests'>Test Results</TabsTrigger>
                                                     </TabsList>
 
                                                     {/* Overview Tab */}
@@ -242,11 +254,11 @@ const Page = () => {
                                                                     </div>
                                                                     <div>
                                                                         <span className='text-xs text-gray-500'>Duration</span>
-                                                                        <p className='text-sm font-medium'>{appointment.duration}</p>
+                                                                        <p className='text-sm font-medium'>{appointment.duration || 'N/A'} min</p>
                                                                     </div>
                                                                     <div>
                                                                         <span className='text-xs text-gray-500'>Doctor</span>
-                                                                        <p className='text-sm font-medium'>{appointment.doctor}</p>
+                                                                        <p className='text-sm font-medium'>{getDoctorName(appointment.doctor)}</p>
                                                                     </div>
                                                                 </div>
                                                             </CardContent>
@@ -263,9 +275,7 @@ const Page = () => {
 
                                                         <Card className='shadow-none'>
                                                             <CardHeader>
-                                                                <CardTitle className='text-base flex items-center gap-2'>
-                                                                    Vital Signs
-                                                                </CardTitle>
+                                                                <CardTitle className='text-base'>Vital Signs</CardTitle>
                                                             </CardHeader>
                                                             <CardContent>
                                                                 {appointment.vitals && (appointment.vitals.blood_pressure || appointment.vitals.temperature || appointment.vitals.heart_rate || appointment.vitals.weight) ? (
@@ -318,7 +328,7 @@ const Page = () => {
                                                         {appointment.prescriptions && appointment.prescriptions.length > 0 ? (
                                                             <div className='space-y-3'>
                                                                 {appointment.prescriptions.map((prescription, index) => (
-                                                                    <div key={index} className='border rounded-lg p-4 '>
+                                                                    <div key={index} className='border rounded-lg p-4'>
                                                                         <h4 className='font-semibold text-sm mb-2'>{prescription.medication}</h4>
                                                                         <div className='space-y-1'>
                                                                             <p className='text-xs text-gray-600'>
@@ -371,14 +381,11 @@ const Page = () => {
                                                                 <p className='text-sm text-gray-500'>No test results available</p>
                                                             </div>
                                                         )}
-
                                                     </TabsContent>
                                                 </Tabs>
                                             </div>
-
                                         </DialogContent>
                                     </Dialog>
-
                                 </div>
                             </CardContent>
                         </Card>
@@ -396,9 +403,9 @@ const Page = () => {
                 )}
             </div>
 
-            {filteredAppointments.length > 0 && (
+            {patientAppointments.length > 0 && (
                 <div className='text-sm text-gray-500 mt-6 text-center'>
-                    Showing {filteredAppointments.length} of {patientAppointments.length} appointments
+                    Showing {patientAppointments.length} of {patientAppointments.length} appointments
                 </div>
             )}
         </div>

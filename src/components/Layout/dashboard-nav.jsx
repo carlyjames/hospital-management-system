@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-// import { useAuth } from '../../Context/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useContext } from 'react';
 import { Icons } from '../../components/icons';
 import { LogOut } from 'lucide-react';
@@ -18,7 +18,7 @@ import {
 export function DashboardNav({ items, setOpen, isMobileNav = false }) {
   const path = usePathname();
   const { isMinimized } = useSidebar();
-  //   const {Logout} = useAuth();
+    const {logout} = useAuth();
 
   if (!items?.length) {
     return null;
@@ -70,7 +70,7 @@ export function DashboardNav({ items, setOpen, isMobileNav = false }) {
           <TooltipTrigger asChild>
             <button
               className="flex items-center gap-2 overflow-hidden rounded-full p-2 text-sm font-medium text-red-700 hover:bg-red-300"
-            // onClick={Logout} 
+              onClick={logout} 
             >
               <LogOut className="h-5 w-5" />
               {isMobileNav || (!isMinimized && !isMobileNav) ? (
@@ -80,7 +80,7 @@ export function DashboardNav({ items, setOpen, isMobileNav = false }) {
               )}
             </button>
           </TooltipTrigger>
-          <TooltipContent align="center" side="right" sideOffset={8} className={`${!isMinimized ? 'hidden' : 'inline-block'} text-red-600`}>
+          <TooltipContent onClick={() => logout()} align="center" side="right" sideOffset={8} className={`${!isMinimized ? 'hidden' : 'inline-block'} text-red-600`}>
             Logout
           </TooltipContent>
         </Tooltip>
