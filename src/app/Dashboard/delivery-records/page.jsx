@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { CalendarDays, Plus, Loader2, RefreshCw } from 'lucide-react'
+import { CalendarDays, Plus, Loader2, RefreshCw, FileText, Download } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useDoctor } from '@/hooks/useDoctor'
 import { toast } from 'sonner'
@@ -16,21 +16,25 @@ import { useQueryClient } from '@tanstack/react-query'
 
 const Page = () => {
   const queryClient = useQueryClient()
-      const [user, setUser] = useState(null);
-      const [isMounted, setIsMounted] = useState(false);
-  
-      useEffect(() => {
-          setIsMounted(true);
-          try {
-              const userDetails = localStorage.getItem('user');
-              if (userDetails) {
-                  const parsedData = JSON.parse(userDetails);
-                  setUser(parsedData);
-              }
-          } catch (error) {
-              console.error('Error parsing user details:', error);
-          }
-      }, []);
+  const [user, setUser] = useState(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const certificateRef = useRef(null);
+  const [selectedDelivery, setSelectedDelivery] = useState(null);
+  const [isCertificateOpen, setIsCertificateOpen] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const userDetails = localStorage.getItem('user');
+      if (userDetails) {
+        const parsedData = JSON.parse(userDetails);
+        setUser(parsedData);
+      }
+    } catch (error) {
+      console.error('Error parsing user details:', error);
+    }
+  }, []);
+
   const { 
     allPatients, 
     allPatientsLoading, 
@@ -44,15 +48,6 @@ const Page = () => {
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false)
   const [isRefreshingPatients, setIsRefreshingPatients] = useState(false)
 
-  // Debug: Log patients data when it changes
-  React.useEffect(() => {
-    if (allPatients && allPatients.length > 0) {
-      console.log('Patients loaded:', allPatients.length)
-      console.log('First patient sample:', allPatients[0])
-    }
-  }, [allPatients])
-
-  // New delivery form state
   const [newDelivery, setNewDelivery] = useState({
     patient_id: '',
     patient_name: '',
@@ -65,30 +60,23 @@ const Page = () => {
     baby_gender: ''
   })
 
-  // Filter deliveries based on search
   const filteredDeliveries = deliveries?.filter(delivery => {
     const searchLower = searchQuery.toLowerCase()
     return (
-      delivery.mother_name?.toLowerCase().includes(searchLower) ||
+      delivery.patient?.full_name?.toLowerCase().includes(searchLower) ||
       delivery.patient_id?.toLowerCase().includes(searchLower)
-      // delivery.doctor?.toLowerCase().includes(searchLower)
     )
   }) || []
 
-  // Handle new delivery submission
   const handleCreateDelivery = async () => {
     try {
-      // Validate required fields
       if (!newDelivery.patient_id || !newDelivery.delivery_date) {
         toast.error('Please fill in all required fields')
         return
       }
 
-      // Find selected patient name
-      const selectedPatient = allPatients?.find(p => p.id === parseInt(newDelivery.patient_id))
-      
       const deliveryData = {
-        patient_id: `P${String(newDelivery.patient_id).padStart(3, '0')}`, // Format as P001, P002, etc.
+        patient_id: `P${String(newDelivery.patient_id).padStart(3, '0')}`,
         patient: newDelivery.patient_id,
         date: newDelivery.delivery_date,
         delivery_type: 'NORMAL',
@@ -104,7 +92,6 @@ const Page = () => {
       toast.success('Delivery recorded successfully')
       setIsNewDeliveryOpen(false)
       
-      // Reset form
       setNewDelivery({
         patient_id: '',
         patient_name: '',
@@ -122,12 +109,42 @@ const Page = () => {
     }
   }
 
-  // Refresh patients list
   const handleRefreshPatients = async () => {
     setIsRefreshingPatients(true)
     await queryClient.invalidateQueries({ queryKey: ['allPatients'] })
     setTimeout(() => setIsRefreshingPatients(false), 500)
     toast.success('Patients list refreshed')
+  }
+
+  // Generate and download birth certificate as PDF/Image
+  const generateBirthCertificate = (delivery) => {
+    setSelectedDelivery(delivery);
+    setIsCertificateOpen(true);
+  }
+
+  const downloadCertificate = () => {
+    const certificate = certificateRef.current;
+    if (!certificate) return;
+
+    // Create a canvas from the certificate HTML
+    import('html2canvas').then(html2canvas => {
+      html2canvas.default(certificate, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false
+      }).then(canvas => {
+        // Convert to image and download
+        const link = document.createElement('a');
+        link.download = `Birth_Certificate_${selectedDelivery?.patient?.full_name?.replace(/\s+/g, '_')}_${dayjs().format('YYYYMMDD')}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        toast.success('Birth certificate downloaded successfully');
+      });
+    }).catch(err => {
+      console.error('Error generating certificate:', err);
+      toast.error('Failed to generate certificate. Please try again.');
+    });
   }
 
   const deliveryStats = {
@@ -157,7 +174,6 @@ const Page = () => {
               </DialogDescription>
             </DialogHeader>
             <div className='grid gap-4 py-4 max-h-[400px] overflow-x-hidden overflow-y-auto'>
-              {/* Patient Selection */}
               <div className='grid gap-2'>
                 <div className='flex items-center justify-between'>
                   <Label htmlFor='patient'>Patient *</Label>
@@ -191,7 +207,7 @@ const Page = () => {
                       <SelectItem value="loading" disabled>Loading patients...</SelectItem>
                     ) : allPatients?.length > 0 ? (
                       allPatients.map(patient => (
-                        <SelectItem key={patient.id} value={patient.id.toString()}>
+                        <SelectItem key={patient.id} value={patient.id}>
                           {patient.full_name} (ID: {patient.id})
                         </SelectItem>
                       ))
@@ -202,7 +218,6 @@ const Page = () => {
                 </Select>
               </div>
 
-              {/* Date of Delivery */}
               <div className='grid gap-2'>
                 <Label htmlFor='date'>Delivery Date *</Label>
                 <Input
@@ -213,7 +228,6 @@ const Page = () => {
                 />
               </div>
 
-              {/* Delivery Type */}
               <div className='grid gap-2'>
                 <Label htmlFor='delivery_type'>Delivery Type</Label>
                 <Select
@@ -232,7 +246,6 @@ const Page = () => {
                 </Select>
               </div>
 
-              {/* Baby Gender */}
               <div className='grid gap-2'>
                 <Label htmlFor='baby_gender'>Baby Gender</Label>
                 <Select
@@ -244,14 +257,13 @@ const Page = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem valuew="Female">Female</SelectItem>
                     <SelectItem value="Twins">Twins</SelectItem>
                     <SelectItem value="Multiple">Multiple</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* Birth Weight */}
               <div className='grid gap-2'>
                 <Label htmlFor='birth_weight'>Birth Weight</Label>
                 <Input
@@ -262,9 +274,8 @@ const Page = () => {
                 />
               </div>
 
-              {/* complaints */}
               <div className='grid gap-2'>
-                <Label htmlFor='complaints'>complaints</Label>
+                <Label htmlFor='complaints'>Complaints</Label>
                 <Input
                   id='complaints'
                   placeholder='e.g., None or describe complaints'
@@ -273,7 +284,6 @@ const Page = () => {
                 />
               </div>
 
-              {/* Additional Notes */}
               <div className='grid gap-2'>
                 <Label htmlFor='notes'>Additional Notes</Label>
                 <Textarea
@@ -308,6 +318,127 @@ const Page = () => {
         </Dialog>
       </div>
 
+      {/* Birth Certificate Dialog */}
+      <Dialog open={isCertificateOpen} onOpenChange={setIsCertificateOpen}>
+        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>Birth Certificate</DialogTitle>
+            <DialogDescription>
+              Official birth certificate for {selectedDelivery?.patient?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Certificate Design */}
+          <div ref={certificateRef} className='bg-white p-8 border-8 border-double border-blue-900'>
+            {/* Header */}
+            <div className='text-center mb-6'>
+              <div className='text-4xl font-bold text-blue-900 mb-2'>CARE BOARD HOSPITAL</div>
+              <div className='text-sm text-gray-600 mb-4'>Official Medical Institution</div>
+              <div className='w-24 h-1 bg-blue-900 mx-auto mb-4'></div>
+              <div className='text-3xl font-serif text-gray-800'>Birth Certificate</div>
+            </div>
+
+            {/* Certificate Body */}
+            <div className='space-y-6 text-gray-800'>
+              <p className='text-center text-lg italic mb-8'>
+                This is to certify that the birth has been registered as per the details mentioned below:
+              </p>
+
+              <div className='grid grid-cols-2 gap-6 border border-gray-300 p-6 rounded-lg bg-gray-50'>
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Certificate Number</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.patient_id || 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Date of Birth</div>
+                  <div className='text-lg font-medium'>
+                    {dayjs(selectedDelivery?.date_of_delivery).format('MMMM D, YYYY')}
+                  </div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Mother&apos;s Name</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.patient?.full_name || 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Baby Gender</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.baby_gender || 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Birth Weight</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.baby_weight || 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Delivery Type</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.delivery_type || 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Attending Doctor</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.doctor?.full_name || 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className='font-semibold text-sm text-gray-600 mb-1'>Baby Condition</div>
+                  <div className='text-lg font-medium'>{selectedDelivery?.baby_condition || 'Healthy'}</div>
+                </div>
+
+                {selectedDelivery?.complaints && (
+                  <div className='col-span-2'>
+                    <div className='font-semibold text-sm text-gray-600 mb-1'>Medical Notes</div>
+                    <div className='text-lg font-medium'>{selectedDelivery.complaints}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className='mt-12 pt-6 border-t border-gray-300'>
+                <div className='flex justify-between items-end'>
+                  <div className='text-center'>
+                    <div className='border-t-2 border-gray-800 w-48 mb-2'></div>
+                    <div className='text-sm font-semibold'>Authorized Signature</div>
+                    <div className='text-xs text-gray-600'>Medical Director</div>
+                  </div>
+
+                  <div className='text-center'>
+                    <div className='text-xs text-gray-600 mb-2'>Date of Issue</div>
+                    <div className='text-sm font-semibold'>{dayjs().format('MMMM D, YYYY')}</div>
+                  </div>
+
+                  <div className='text-center'>
+                    <div className='w-24 h-24 border-2 border-dashed border-gray-400 flex items-center justify-center text-xs text-gray-400'>
+                      Official Seal
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className='text-center text-xs text-gray-500 mt-6 pt-4 border-t'>
+                <p>Care Board Hospital • Official Birth Record</p>
+                <p className='mt-1'>This is an official document issued by Care Board Hospital</p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className='flex gap-2'>
+            <Button variant='outline' onClick={() => setIsCertificateOpen(false)}>
+              Close
+            </Button>
+            <Button 
+              className='bg-[#021848] hover:bg-[#021848]/90' 
+              onClick={downloadCertificate}
+            >
+              <Download className='w-4 h-4 mr-2' />
+              Download Certificate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
         <Card>
@@ -330,7 +461,7 @@ const Page = () => {
       {/* Search Bar */}
       <div className='mb-4'>
         <Input
-          placeholder='Search by mother name, patient ID, or doctor...'
+          placeholder='Search by mother name or patient ID...'
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className='max-w-md'
@@ -354,7 +485,7 @@ const Page = () => {
                   <TableHead>Delivery Type</TableHead>
                   <TableHead>Baby Gender</TableHead>
                   <TableHead>Birth Weight</TableHead>
-                  <TableHead>complaints</TableHead>
+                  <TableHead>Complaints</TableHead>
                   <TableHead>Notes</TableHead>
                 </TableRow>
               </TableHeader>
@@ -378,9 +509,7 @@ const Page = () => {
                       <TableCell>{delivery.baby_gender}</TableCell>
                       <TableCell>{delivery.baby_weight}</TableCell>
                       <TableCell>
-                        <span>
-                          {delivery.complaints}
-                        </span>
+                        <span>{delivery.complaints}</span>
                       </TableCell>
                       <TableCell className='max-w-xs truncate'>
                         {delivery.baby_condition || '-'}
