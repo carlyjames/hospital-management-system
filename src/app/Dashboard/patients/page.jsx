@@ -144,7 +144,7 @@ const Page = () => {
                                         <TableCell className="font-medium">
                                             <div className="flex gap-3 items-center">
                                                 <Link
-                                                    href={`/dashboard/patients/${patient.id}`}
+                                                    href={`/Dashboard/patients/${patient.id}`}
                                                     title={`View ${patient.full_name}'s details`}
                                                 >
                                                     <Eye className='cursor-pointer text-gray-500 hover:text-blue-600 transition-colors' size={18} />

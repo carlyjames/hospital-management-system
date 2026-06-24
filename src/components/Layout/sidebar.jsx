@@ -15,28 +15,28 @@ const getNavItemsByRole = (role) => {
   switch (role) {
     case 'DOCTOR':
       return [
-        { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-        { title: 'Patients', href: '/dashboard/patients', icon: 'users', label: 'users' },
-        { title: 'Appointments', href: '/dashboard/appointments', icon: 'Calendar', label: 'Calendar' },
-       { title: 'Delivery Records', href: '/dashboard/delivery-records', icon: 'Tickets', label: 'Tickets' },
+        { title: 'Dashboard', href: '/Dashboard', icon: 'dashboard', label: 'Dashboard' },
+        { title: 'Patients', href: '/Dashboard/patients', icon: 'users', label: 'users' },
+        { title: 'Appointments', href: '/Dashboard/appointments', icon: 'Calendar', label: 'Calendar' },
+       { title: 'Delivery Records', href: '/Dashboard/delivery-records', icon: 'Tickets', label: 'Tickets' },
       ];
     case 'PATIENT':
       return [
-        { title: 'Dashboard', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-        { title: 'My Appointments', href: '/dashboard/my-appointments', icon: 'Calendar', label: 'Calendar' },
-        { title: 'My Delivery Records', href: '/dashboard/my-delivery', icon: 'Tickets', label: 'Tickets' },
+        { title: 'Dashboard', href: '/Dashboard', icon: 'dashboard', label: 'Dashboard' },
+        { title: 'My Appointments', href: '/Dashboard/my-appointments', icon: 'Calendar', label: 'Calendar' },
+        { title: 'My Delivery Records', href: '/Dashboard/my-delivery', icon: 'Tickets', label: 'Tickets' },
       ];
 
     default:
       return [
-        { name: 'OverView', href: '/dashboard', icon: 'dashboard', label: 'Dashboard' },
-        { title: 'Delivery Records', href: '/dashboard/delivery-records', icon: 'Tickets', label: 'Tickets' },
+        { name: 'OverView', href: '/dashboard', icon: 'Dashboard', label: 'Dashboard' },
+        { title: 'Delivery Records', href: '/Dashboard/delivery-records', icon: 'Tickets', label: 'Tickets' },
       ];
   }
 };
 
 const navItems = [
-    { title: 'Overview', href: '/Dashboard', icon: 'dashboard', label: 'Dashboard' },
+    { title: 'Overview', href: '/Dashboard', icon: 'Dashboard', label: 'Dashboard' },
     { title: 'Patients', href: '/Dashboard/patients', icon: 'users', label: 'users' },
     { title: 'Appointments', href: '/Dashboard/appointments', icon: 'Calendar', label: 'Calendar' },
     { title: 'My Appointments', href: '/Dashboard/my-appointments', icon: 'Calendar', label: 'Calendar' },

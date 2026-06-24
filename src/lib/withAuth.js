@@ -12,7 +12,7 @@ const withAuth = (WrappedComponent) => {
       const token = localStorage.getItem('accessToken');
 
       if (!token) {
-        router.push('/login');
+        router.push('/Login');
       }
     }, [router]);
 

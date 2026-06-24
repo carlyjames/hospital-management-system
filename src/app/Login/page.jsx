@@ -39,7 +39,7 @@ const page = () => {
       toast.success(response.data.message || 'Login successful!');
 
       if (response.data.access) {
-        router.push('/dashboard');
+        router.push('/Dashboard');
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed. Please try again.')
@@ -88,7 +88,7 @@ const page = () => {
           <div className='h-[1px] w-[80%] bg-gray-300'></div>
         </div>
 
-        <h1 className='text-[#2563EB] text-sm text-center mt-auto'>New User? <Link href='/register' className='underline'>SIGN UP HERE</Link> </h1>
+        <h1 className='text-[#2563EB] text-sm text-center mt-auto'>New User? <Link href='/Register' className='underline'>SIGN UP HERE</Link> </h1>
       </div>
     </section>
   )

@@ -54,7 +54,7 @@ const Page = () => {
     },
     onSuccess: () => {
       toast.success('Registration successful! Please login to continue.')
-      router.push('/login')
+      router.push('/Login')
     },
     onError: (error) => {
       console.error('Registration error:', error)
@@ -311,7 +311,7 @@ const Page = () => {
 
             <p className='text-center text-sm text-gray-600'>
               Already have an account?{' '}
-              <Link href='/login' className='text-[#2563EB] font-semibold hover:underline'>
+              <Link href='/Login' className='text-[#2563EB] font-semibold hover:underline'>
                 Login here
               </Link>
             </p>

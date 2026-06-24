@@ -52,7 +52,7 @@ export const useAuth = () => {
       localStorage.removeItem('user');
       queryClient.clear();
       setUser(null);
-      router.push('/login');
+      router.push('/Login');
     },
   });
 
